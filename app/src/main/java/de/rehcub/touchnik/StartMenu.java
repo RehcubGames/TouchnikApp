@@ -17,6 +17,7 @@ public class StartMenu extends AppCompatActivity {
         Button circleButton = (Button)findViewById(R.id.circleButton);
         Button squareButton = (Button)findViewById(R.id.squareButton);
         Button labyrinthButton = (Button)findViewById(R.id.labyrinthButton);
+        Button reliefButton = (Button)findViewById(R.id.reliefButton);
 
         final Intent intent1 = new Intent(this, HapticView.class);
         intent1.putExtra("background", "kreis");
@@ -48,6 +49,17 @@ public class StartMenu extends AppCompatActivity {
             public void onClick(View v)
             {
                 startActivity(intent3);
+            }
+        });
+
+        final Intent intent4 = new Intent(this, HapticView.class);
+        intent4.putExtra("background", "relief");
+        reliefButton.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                startActivity(intent4);
             }
         });
     }

@@ -32,7 +32,7 @@ public class HapticView extends Activity implements SurfaceHolder.Callback {
     private int screenWidth, screenHeight;
     private float scaleX, scaleY;
     private Bitmap background;
-    private String backgroundName;
+    private boolean relief = false;
 
     String address = null, name = null;
 
@@ -65,6 +65,11 @@ public class HapticView extends Activity implements SurfaceHolder.Callback {
         SurfaceView view = new SurfaceView(this);
         setContentView(view);
         view.getHolder().addCallback(this);
+
+        String backgroundName = getIntent().getStringExtra("background");
+        Log.i(TAG, getIntent().getStringExtra("background"));
+        if(backgroundName.equals("relief"))
+            relief = true;
 
         int resID = getResources().getIdentifier(getIntent().getStringExtra("background"), "drawable", getPackageName());
         background = BitmapFactory.decodeResource(getResources(), resID);
@@ -132,8 +137,16 @@ public class HapticView extends Activity implements SurfaceHolder.Callback {
             bluetoothQueue.clear();
         }
 
-        if (event.getAction() == MotionEvent.ACTION_MOVE && !finish)
+        if (event.getAction() == MotionEvent.ACTION_MOVE
+                && !finish)
         {
+            if(relief)
+            {
+                int pixel = background.getPixel((int) (x * scaleX), (int) (y * scaleY));
+                bluetoothSend((int) (Color.red(pixel)/25.5));
+                return true;
+            }
+
             if(x > 640 && y > 40 && y < 155)
             {
                 bluetoothSend(255);
@@ -194,12 +207,12 @@ public class HapticView extends Activity implements SurfaceHolder.Callback {
     }
 
     private void bluetoothSend(int i) {
-       // Log.i(TAG, i + " send");
+        Log.i(TAG, "trying to send: " + i);
         try {
             if (btSocket != null)
                 //btSocket.getOutputStream().write(i.toString().getBytes());
                 btSocket.getOutputStream().write(i);
-            Log.i(TAG, i + " habe wirklich gesendet");
+            Log.i(TAG, i + " sended");
 
         } catch (Exception e) {
             //Toast.makeText(this.context.getApplicationContext(),e.getMessage(), Toast.LENGTH_SHORT).show();

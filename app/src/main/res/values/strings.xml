@@ -13,4 +13,5 @@
     <string name="quadrat">Quadrat</string>
     <string name="labyrinth">Labyrinth</string>
     <string name="surround_detection">Surround Detection</string>
+    <string name="relief">Relief</string>
 </resources>
