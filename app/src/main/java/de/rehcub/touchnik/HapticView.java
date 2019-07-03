@@ -142,7 +142,8 @@ public class HapticView extends Activity implements SurfaceHolder.Callback {
                 bluetoothQueue.add(60);
                 while(!bluetoothQueue.isEmpty())
                 {
-                    bluetoothSend((int) bluetoothQueue.poll());
+                    if(lastBluetoothSend + bluetoothDelay <= System.currentTimeMillis())
+                        bluetoothSend((int) bluetoothQueue.poll());
                 }
             }else
                 bluetoothSend(0);
