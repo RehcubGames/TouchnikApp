@@ -128,7 +128,7 @@ public class HapticView extends Activity implements SurfaceHolder.Callback {
         if (event.getAction() == MotionEvent.ACTION_UP
                 && !finish)
         {
-            bluetoothSend(0);
+            bluetoothSend(251);
             bluetoothQueue.clear();
         }
 
