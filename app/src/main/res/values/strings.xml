@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Touchnik</string>
+    <string name="send">send</string>
+    <string name="options">Options</string>
+    <string name="start">Start</string>
+    <string name="title_activity_options">Options</string>
+    <string name="sensitivity_steps">Sensitivity Steps</string>
+
+    <string name="title_activity_image">ImageActivity</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="kreis">Kreis</string>
+    <string name="quadrat">Quadrat</string>
+    <string name="labyrinth">Labyrinth</string>
+    <string name="surround_detection">Surround Detection</string>
+</resources>
