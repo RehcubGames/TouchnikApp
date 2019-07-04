@@ -22,7 +22,6 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
@@ -40,9 +39,6 @@ public class HapticView extends Activity implements SurfaceHolder.Callback {
     BluetoothSocket btSocket = null;
     Set<BluetoothDevice> pairedDevices;
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    private Queue bluetoothQueue = new LinkedList();
-    final int bluetoothDelay = 50; //Delay in milli seconds
-    long lastBluetoothSend = 0;
 
     boolean finish = false;
 
@@ -67,22 +63,20 @@ public class HapticView extends Activity implements SurfaceHolder.Callback {
         view.getHolder().addCallback(this);
 
         String backgroundName = getIntent().getStringExtra("background");
-        Log.i(TAG, getIntent().getStringExtra("background"));
-        if(backgroundName.equals("relief"))
+        if(backgroundName.equals("relief") || backgroundName.equals("relief_big"))
             relief = true;
 
         int resID = getResources().getIdentifier(getIntent().getStringExtra("background"), "drawable", getPackageName());
-        background = BitmapFactory.decodeResource(getResources(), resID);
+        BitmapFactory.Options bitmapOptions = new BitmapFactory.Options();
+        bitmapOptions.inScaled = false;
+        background = BitmapFactory.decodeResource(getResources(), resID, bitmapOptions);
 
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         screenHeight = displayMetrics.heightPixels;
         screenWidth = displayMetrics.widthPixels;
-        scaleX = background.getWidth() / screenWidth;
-        scaleY = background.getHeight() / screenHeight;
-
-        Log.i(TAG, screenWidth + " / " + screenHeight);
-        Log.i(TAG, background.getWidth() + " / " + background.getHeight());
+        scaleX = (float) background.getWidth() / (float) screenWidth;
+        scaleY = (float) background.getHeight() / (float) screenHeight;
 
         try {
             bluetooth_connect_device();
@@ -98,12 +92,13 @@ public class HapticView extends Activity implements SurfaceHolder.Callback {
             pairedDevices = myBluetooth.getBondedDevices();
             if (pairedDevices.size() > 0) {
                 for (BluetoothDevice bt : pairedDevices) {
-                    address = bt.getAddress().toString();
-                    name = bt.getName().toString();
+                    address = bt.getAddress();
+                    name = bt.getName();
                     Toast.makeText(this.getApplicationContext(), "Connected to " + name, Toast.LENGTH_SHORT).show();
                 }
             }
         } catch (Exception we) {
+            Toast.makeText(this.getApplicationContext(), "Connection failed!", Toast.LENGTH_SHORT).show();
         }
         myBluetooth = BluetoothAdapter.getDefaultAdapter();                         //get the mobile bluetooth device
         BluetoothDevice dispositivo = myBluetooth.getRemoteDevice(address);         //connects to the device's address and checks if it's available
@@ -135,16 +130,7 @@ public class HapticView extends Activity implements SurfaceHolder.Callback {
         {
             if(Settings.FOUR_DIRECTIONS)
             {
-                bluetoothQueue.clear();
-                bluetoothQueue.add(0);
-                bluetoothQueue.add(20);
-                bluetoothQueue.add(40);
-                bluetoothQueue.add(60);
-                while(!bluetoothQueue.isEmpty())
-                {
-                    if(lastBluetoothSend + bluetoothDelay <= System.currentTimeMillis())
-                        bluetoothSend((int) bluetoothQueue.poll());
-                }
+                bluetoothSend(251);
             }else
                 bluetoothSend(0);
         }
@@ -161,7 +147,7 @@ public class HapticView extends Activity implements SurfaceHolder.Callback {
 
             if(x > 640 && y > 40 && y < 155)
             {
-                bluetoothSend(255);
+                bluetoothSend(251);
                 finish = true;
                 super.finish();
                 return true;
@@ -169,10 +155,8 @@ public class HapticView extends Activity implements SurfaceHolder.Callback {
 
             if (Settings.SURROUND_DETECTION)
             {
-                if(bluetoothQueue.isEmpty())
-                    evaluateVibrationStrength(x, y);
-            }
-            else {
+                evaluateVibrationStrength(x, y);
+            }else{
                 int pixel = background.getPixel((int) (x * scaleX), (int) (y * scaleY));
                 if (Color.red(pixel) > 200)
                     bluetoothSend(10);
@@ -180,13 +164,6 @@ public class HapticView extends Activity implements SurfaceHolder.Callback {
                     bluetoothSend(0);
             }
 
-            if(lastBluetoothSend + bluetoothDelay <= System.currentTimeMillis()
-                && bluetoothQueue.peek() != null)
-            {
-                int pixel = (int) bluetoothQueue.poll();
-                bluetoothSend(pixel);
-                lastBluetoothSend = System.currentTimeMillis();
-            }
             return true;
         }
         return super.onTouchEvent(event);
@@ -218,13 +195,23 @@ public class HapticView extends Activity implements SurfaceHolder.Callback {
         //canvas.drawBitmap(background, 0, 0,null);
     }
 
-    private void bluetoothSend(int i) {
+    private void bluetoothSend(int i)
+    {
         Log.i(TAG, "trying to send: " + i);
         try {
             if (btSocket != null)
-                //btSocket.getOutputStream().write(i.toString().getBytes());
                 btSocket.getOutputStream().write(i);
-            Log.i(TAG, i + " sended");
+
+        } catch (Exception e) {
+            //Toast.makeText(this.context.getApplicationContext(),e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void bluetoothSend(byte[] data)
+    {
+        try {
+            if (btSocket != null)
+                btSocket.getOutputStream().write(data);
 
         } catch (Exception e) {
             //Toast.makeText(this.context.getApplicationContext(),e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -233,22 +220,20 @@ public class HapticView extends Activity implements SurfaceHolder.Callback {
 
     private void evaluateVibrationStrength(int x, int y)
     {
-        int[] pixels = new int[4];
+        byte[] pixels = new byte[4];
 
-        pixels[0] = checkPixelEnvironment(0, -1, x, y); //North
-        pixels[1] = checkPixelEnvironment(0, 1, x, y);  //South
-        pixels[2] = checkPixelEnvironment(-1, 0, x, y); //West
-        pixels[3] = checkPixelEnvironment(1, 0, x, y);  //East
+        pixels[0] = (byte) checkPixelEnvironment(0, -1, x, y); //North
+        pixels[1] = (byte) checkPixelEnvironment(0, 1, x, y);  //South
+        pixels[2] = (byte) checkPixelEnvironment(-1, 0, x, y); //West
+        pixels[3] = (byte) checkPixelEnvironment(1, 0, x, y);  //East
 
-        if (Settings.FOUR_DIRECTIONS) {
-            for (int i = 0; i < pixels.length; i++) {
-                bluetoothQueue.add(pixels[i] + 20 * i);
-            }
-        }
-        else{
+
+        if (Settings.FOUR_DIRECTIONS)
+        {
+            bluetoothSend(pixels);
+        }else{
             int vibrationStrength = getStrongestVibration(pixels);
-            bluetoothQueue.add(vibrationStrength);
-            //bluetoothSend(vibrationStrength);
+            bluetoothSend(vibrationStrength);
         }
     }
 
@@ -262,17 +247,20 @@ public class HapticView extends Activity implements SurfaceHolder.Callback {
      */
     private int checkPixelEnvironment(int xDirection, int yDirection, int x, int y) {
         int iteration = 200;
-        for (int i = 0; i <= iteration; i++) {
+        for (int i = 0; i <= iteration; i++)
+        {
             boolean yValid = background.getHeight() - 1 >= (y * scaleY) + i * yDirection && 0 <= (y * scaleY) + i * yDirection;
             boolean xValid = background.getWidth() - 1 >= (x * scaleX) + i * xDirection && 0 <= (x * scaleX) + i * xDirection;
 
-            //Log.i(TAG, String.valueOf((x * scaleX) + i * xDirection));
-            //Log.i(TAG, String.valueOf((y * scaleY) + i * yDirection));
-            if ((xValid && yValid)) {
+            if ((xValid && yValid))
+            {
                 int pixel;
                 pixel = background.getPixel((int) ((x * scaleX) + i * xDirection), (int) ((y * scaleY) + i * yDirection));
                 if (Color.red(pixel) > 200)
                     return (iteration - i) / (iteration/10);
+            }else{
+                Log.i(TAG, "Pixel out of bounds");
+                return 0;
             }
         }
         return 0;
@@ -282,13 +270,12 @@ public class HapticView extends Activity implements SurfaceHolder.Callback {
      * @param pixels An Array of all four directions
      * @return The VibrationStrength of the nearest Pixel
      */
-    private int getStrongestVibration(int[] pixels)
+    private int getStrongestVibration(byte[] pixels)
     {
         int strength = 0;
-        for (int i = 0; i < pixels.length; i++)
-        {
-            if (pixels[i] > strength)
-                strength = pixels[i];
+        for (byte pixel : pixels) {
+            if (pixel > strength)
+                strength = pixel;
         }
         return strength;
     }

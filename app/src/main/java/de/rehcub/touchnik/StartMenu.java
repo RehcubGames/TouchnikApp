@@ -4,7 +4,10 @@ import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
 
 public class StartMenu extends AppCompatActivity {
@@ -14,52 +17,24 @@ public class StartMenu extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start_menu);
 
-        Button circleButton = (Button)findViewById(R.id.circleButton);
-        Button squareButton = (Button)findViewById(R.id.squareButton);
-        Button labyrinthButton = (Button)findViewById(R.id.labyrinthButton);
-        Button reliefButton = (Button)findViewById(R.id.reliefButton);
+        final ListView hapticViewList = findViewById(R.id.hapticViewList);
+
+        final String[] hapticNameArray =
+                {
+                  "kreis", "quadrat", "diamond", "kreis_no_fill", "quadrat_no_fill", "diamond_no_fill", "labyrinth", "relief", "relief_big"
+                };
+        ArrayAdapter<String> arrayAdapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1 , hapticNameArray);
+
+
+        hapticViewList.setAdapter(arrayAdapter);
 
         final Intent intent1 = new Intent(this, HapticView.class);
-        intent1.putExtra("background", "kreis");
-        circleButton.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View v)
+        hapticViewList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id)
             {
+                intent1.putExtra("background",hapticNameArray[position]);
                 startActivity(intent1);
-            }
-        });
-
-        final Intent intent2 = new Intent(this, HapticView.class);
-        intent2.putExtra("background", "quadrat");
-        squareButton.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View v)
-            {
-                startActivity(intent2);
-            }
-        });
-
-        final Intent intent3 = new Intent(this, HapticView.class);
-        intent3.putExtra("background", "labyrinth");
-        labyrinthButton.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View v)
-            {
-                startActivity(intent3);
-            }
-        });
-
-        final Intent intent4 = new Intent(this, HapticView.class);
-        intent4.putExtra("background", "relief");
-        reliefButton.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View v)
-            {
-                startActivity(intent4);
             }
         });
     }
